@@ -6,11 +6,9 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const client = new MongoClient(uri);
 
@@ -63,20 +61,13 @@ app.get('/', (req, res) => {
   });
 });
 
-// ============================================
-// USER AUTHENTICATION ENDPOINTS
-// ============================================
-
-// Register new user
 app.post('/users', checkMongoConnection, async (req, res) => {
   try {
     const { name, email, password, photoURL, googleAuth, uid, role } = req.body;
 
-    // Check if user already exists
     const existingUser = await usersCollection.findOne({ email });
     
     if (existingUser) {
-      // If it's a Google auth user, just update the info
       if (googleAuth) {
         return res.send({
           success: true,
@@ -95,7 +86,6 @@ app.post('/users', checkMongoConnection, async (req, res) => {
       });
     }
 
-    // Create new user
     const newUser = {
       name,
       email,
@@ -106,9 +96,8 @@ app.post('/users', checkMongoConnection, async (req, res) => {
       updatedAt: new Date()
     };
 
-    // Only store password hash if not Google auth (in production, use bcrypt)
     if (password && !googleAuth) {
-      newUser.password = password; // In production, hash this with bcrypt!
+      newUser.password = password;
     }
 
     const result = await usersCollection.insertOne(newUser);
@@ -132,12 +121,10 @@ app.post('/users', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Login user
 app.post('/login', checkMongoConnection, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
     const user = await usersCollection.findOne({ email });
 
     if (!user) {
@@ -147,7 +134,6 @@ app.post('/login', checkMongoConnection, async (req, res) => {
       });
     }
 
-    // Check password (in production, use bcrypt to compare hashed password)
     if (user.password !== password) {
       return res.status(401).send({ 
         success: false,
@@ -174,12 +160,11 @@ app.post('/login', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Get all users (for admin/debugging)
 app.get('/users', checkMongoConnection, async (req, res) => {
   try {
     const users = await usersCollection
       .find({})
-      .project({ password: 0 }) // Don't send passwords
+      .project({ password: 0 })
       .toArray();
 
     res.send({
@@ -196,13 +181,12 @@ app.get('/users', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Get user by email
 app.get('/users/:email', checkMongoConnection, async (req, res) => {
   try {
     const email = req.params.email;
     const user = await usersCollection.findOne(
       { email },
-      { projection: { password: 0 } } // Don't send password
+      { projection: { password: 0 } }
     );
 
     if (!user) {
@@ -225,9 +209,6 @@ app.get('/users/:email', checkMongoConnection, async (req, res) => {
   }
 });
 
-
-
-// Get latest 6 products (for Home page)
 app.get('/products/latest', checkMongoConnection, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 6;
@@ -248,7 +229,6 @@ app.get('/products/latest', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Get all products with pagination
 app.get('/products', checkMongoConnection, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -256,7 +236,6 @@ app.get('/products', checkMongoConnection, async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
 
-    // Build search query
     const searchQuery = search ? {
       $or: [
         { productName: { $regex: search, $options: 'i' } },
@@ -292,7 +271,6 @@ app.get('/products', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Get single product by ID (for Product Details page)
 app.get('/products/:id', checkMongoConnection, async (req, res) => {
   try {
     const id = req.params.id;
@@ -326,11 +304,6 @@ app.get('/products/:id', checkMongoConnection, async (req, res) => {
   }
 });
 
-// ============================================
-// ADD EXPORT/PRODUCT ENDPOINTS (Requirement 7)
-// ============================================
-
-// Add new product/export
 app.post('/products', checkMongoConnection, async (req, res) => {
   try {
     const { 
@@ -344,7 +317,6 @@ app.post('/products', checkMongoConnection, async (req, res) => {
       userName 
     } = req.body;
 
-    // Validation
     if (!productName || !productImage || !price || !originCountry || !rating || !availableQuantity || !userEmail) {
       return res.status(400).send({ 
         success: false,
@@ -381,11 +353,6 @@ app.post('/products', checkMongoConnection, async (req, res) => {
   }
 });
 
-// ============================================
-// MY EXPORTS ENDPOINTS (Requirement 8)
-// ============================================
-
-// Get products by user email (My Exports page)
 app.get('/exports/:email', checkMongoConnection, async (req, res) => {
   try {
     const email = req.params.email;
@@ -409,7 +376,6 @@ app.get('/exports/:email', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Update product (for My Exports page)
 app.put('/products/:id', checkMongoConnection, async (req, res) => {
   try {
     const id = req.params.id;
@@ -468,7 +434,6 @@ app.put('/products/:id', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Delete product (for My Exports page)
 app.delete('/products/:id', checkMongoConnection, async (req, res) => {
   try {
     const id = req.params.id;
@@ -502,11 +467,6 @@ app.delete('/products/:id', checkMongoConnection, async (req, res) => {
   }
 });
 
-// ============================================
-// MY IMPORTS ENDPOINTS (Requirement 6)
-// ============================================
-
-// Import a product (Import Now button)
 app.post('/imports', checkMongoConnection, async (req, res) => {
   try {
     const {
@@ -521,7 +481,6 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
       userName
     } = req.body;
 
-    // Validation
     if (!productId || !productName || !userEmail || !importedQuantity) {
       return res.status(400).send({ 
         success: false,
@@ -529,7 +488,6 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
       });
     }
 
-    // Check if product has enough quantity
     const product = await productsCollection.findOne({ _id: new ObjectId(productId) });
     
     if (!product) {
@@ -546,14 +504,12 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
       });
     }
 
-    // Check if user already imported this product
     const existingImport = await importsCollection.findOne({
       productId: productId,
       userEmail: userEmail
     });
 
     if (existingImport) {
-      // Update quantity if already imported
       await importsCollection.updateOne(
         { _id: existingImport._id },
         { 
@@ -562,7 +518,6 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
         }
       );
     } else {
-      // Create new import
       const importData = {
         productId,
         productName,
@@ -580,7 +535,6 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
       await importsCollection.insertOne(importData);
     }
 
-    // Decrease available quantity from products
     await productsCollection.updateOne(
       { _id: new ObjectId(productId) },
       { 
@@ -602,7 +556,6 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Get all imports by user email (My Imports page)
 app.get('/imports/:email', checkMongoConnection, async (req, res) => {
   try {
     const email = req.params.email;
@@ -626,7 +579,6 @@ app.get('/imports/:email', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Remove imported product (Remove button on My Imports page)
 app.delete('/imports/:id', checkMongoConnection, async (req, res) => {
   try {
     const id = req.params.id;
@@ -638,7 +590,6 @@ app.delete('/imports/:id', checkMongoConnection, async (req, res) => {
       });
     }
 
-    // Get import details before deleting
     const importData = await importsCollection.findOne({ _id: new ObjectId(id) });
     
     if (!importData) {
@@ -648,7 +599,6 @@ app.delete('/imports/:id', checkMongoConnection, async (req, res) => {
       });
     }
 
-    // Return quantity back to product
     await productsCollection.updateOne(
       { _id: new ObjectId(importData.productId) },
       { 
@@ -657,7 +607,6 @@ app.delete('/imports/:id', checkMongoConnection, async (req, res) => {
       }
     );
 
-    // Delete import
     const result = await importsCollection.deleteOne({ _id: new ObjectId(id) });
 
     res.send({
@@ -673,11 +622,6 @@ app.delete('/imports/:id', checkMongoConnection, async (req, res) => {
   }
 });
 
-// ============================================
-// ADDITIONAL USEFUL ENDPOINTS
-// ============================================
-
-// Get statistics
 app.get('/stats', checkMongoConnection, async (req, res) => {
   try {
     const totalProducts = await productsCollection.countDocuments();
@@ -699,7 +643,6 @@ app.get('/stats', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Get featured/latest products (for home page)
 app.get('/products/featured/latest', checkMongoConnection, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 6;
@@ -723,14 +666,8 @@ app.get('/products/featured/latest', checkMongoConnection, async (req, res) => {
   }
 });
 
-// ============================================
-// START SERVER
-// ============================================
-
-// Start MongoDB connection
 connectToMongoDB();
 
-// Start Express server
 app.listen(port, () => {
   console.log(`\n Server is running on port: ${port}`);
   console.log(` Local: http://localhost:${port}`);
@@ -756,7 +693,6 @@ app.listen(port, () => {
   console.log(`   GET    /stats                     - Statistics\n`);
 });
 
-// Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n\n Shutting down gracefully...');
   await client.close();
