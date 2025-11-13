@@ -1,0 +1,125 @@
+{
+  "products": [
+    {
+      "productName": "Jute Shopping Bags",
+      "productImage": "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=500",
+      "price": 150,
+      "originCountry": "Bangladesh",
+      "rating": 4.5,
+      "availableQuantity": 100,
+      "userEmail": "seller1@example.com",
+      "userName": "Karim Textiles"
+    },
+    {
+      "productName": "Hand Woven Cotton Saree",
+      "productImage": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500",
+      "price": 2500,
+      "originCountry": "Bangladesh",
+      "rating": 5.0,
+      "availableQuantity": 50,
+      "userEmail": "seller2@example.com",
+      "userName": "Aarong Crafts"
+    },
+    {
+      "productName": "Ceramic Tea Set",
+      "productImage": "https://images.unsplash.com/photo-1581548834582-80e5ad027db3?w=500",
+      "price": 800,
+      "originCountry": "Bangladesh",
+      "rating": 4.0,
+      "availableQuantity": 75,
+      "userEmail": "seller1@example.com",
+      "userName": "Karim Textiles"
+    },
+    {
+      "productName": "Bamboo Handicrafts",
+      "productImage": "https://images.unsplash.com/photo-1524041347327-aa28f5c9d6a5?w=500",
+      "price": 450,
+      "originCountry": "Bangladesh",
+      "rating": 4.3,
+      "availableQuantity": 120,
+      "userEmail": "seller3@example.com",
+      "userName": "Rural Crafts Ltd"
+    },
+    {
+      "productName": "Organic Hilsa Fish",
+      "productImage": "https://images.unsplash.com/photo-1534766555764-ce878a5e3a2b?w=500",
+      "price": 1200,
+      "originCountry": "Bangladesh",
+      "rating": 4.8,
+      "availableQuantity": 30,
+      "userEmail": "seller4@example.com",
+      "userName": "Fresh Fish Export"
+    },
+    {
+      "productName": "Premium Black Tea (100g)",
+      "productImage": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500",
+      "price": 350,
+      "originCountry": "Bangladesh",
+      "rating": 4.6,
+      "availableQuantity": 200,
+      "userEmail": "seller2@example.com",
+      "userName": "Aarong Crafts"
+    },
+    {
+      "productName": "Leather Wallet",
+      "productImage": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500",
+      "price": 650,
+      "originCountry": "Bangladesh",
+      "rating": 4.4,
+      "availableQuantity": 85,
+      "userEmail": "seller5@example.com",
+      "userName": "Apex Leather"
+    },
+    {
+      "productName": "Nakshi Kantha Bedsheet",
+      "productImage": "https://images.unsplash.com/photo-1631049552240-59c37f38802b?w=500",
+      "price": 1800,
+      "originCountry": "Bangladesh",
+      "rating": 4.9,
+      "availableQuantity": 40,
+      "userEmail": "seller2@example.com",
+      "userName": "Aarong Crafts"
+    },
+    {
+      "productName": "Raw Honey (500ml)",
+      "productImage": "https://images.unsplash.com/photo-1587049352846-4a222e784e38?w=500",
+      "price": 550,
+      "originCountry": "Bangladesh",
+      "rating": 4.7,
+      "availableQuantity": 150,
+      "userEmail": "seller6@example.com",
+      "userName": "Sundarbans Honey"
+    },
+    {
+      "productName": "Terracotta Plant Pots Set",
+      "productImage": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=500",
+      "price": 320,
+      "originCountry": "Bangladesh",
+      "rating": 4.2,
+      "availableQuantity": 95,
+      "userEmail": "seller3@example.com",
+      "userName": "Rural Crafts Ltd"
+    },
+    {
+      "productName": "Hand Painted Rickshaw Art",
+      "productImage": "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=500",
+      "price": 3500,
+      "originCountry": "Bangladesh",
+      "rating": 5.0,
+      "availableQuantity": 15,
+      "userEmail": "seller7@example.com",
+      "userName": "Art Bengal"
+    },
+    {
+      "productName": "Jamdani Fabric (5 yards)",
+      "productImage": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500",
+      "price": 4200,
+      "originCountry": "Bangladesh",
+      "rating": 4.9,
+      "availableQuantity": 25,
+      "userEmail": "seller2@example.com",
+      "userName": "Aarong Crafts"
+    }
+  ]
+}
+
