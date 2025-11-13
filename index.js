@@ -14,10 +14,10 @@ app.use(express.json());
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const client = new MongoClient(uri);
 
-let database, productsCollection, importsCollection;
+let database, productsCollection, importsCollection, usersCollection;
 let isMongoConnected = false;
 
-// Connect to MongoDB
+
 async function connectToMongoDB() {
   try {
     await client.connect();
@@ -27,15 +27,16 @@ async function connectToMongoDB() {
     database = client.db("exportHub");
     productsCollection = database.collection("products");
     importsCollection = database.collection("imports");
+    usersCollection = database.collection("users");
   } catch (error) {
     console.error("✗ MongoDB connection error:", error.message);
-    console.log("\n⚠️  MongoDB is not running. Please:");
+    console.log("\n  MongoDB is not running. Please:");
     console.log("   1. Update MONGODB_URI in .env file with MongoDB Atlas connection string");
     console.log("   2. Or start local MongoDB with 'mongod' command\n");
   }
 }
 
-// Middleware to check MongoDB connection
+
 const checkMongoConnection = (req, res, next) => {
   if (!isMongoConnected) {
     return res.status(503).send({ 
@@ -47,9 +48,6 @@ const checkMongoConnection = (req, res, next) => {
   next();
 };
 
-// ============================================
-// ROOT ENDPOINT
-// ============================================
 app.get('/', (req, res) => {
   res.send({ 
     success: true,
@@ -58,14 +56,196 @@ app.get('/', (req, res) => {
     endpoints: {
       products: '/products',
       imports: '/imports',
-      exports: '/exports'
+      exports: '/exports',
+      users: '/users',
+      auth: '/login'
     }
   });
 });
 
 // ============================================
-// ALL PRODUCTS ENDPOINTS (Requirement 5)
+// USER AUTHENTICATION ENDPOINTS
 // ============================================
+
+// Register new user
+app.post('/users', checkMongoConnection, async (req, res) => {
+  try {
+    const { name, email, password, photoURL, googleAuth, uid } = req.body;
+
+    // Check if user already exists
+    const existingUser = await usersCollection.findOne({ email });
+    
+    if (existingUser) {
+      // If it's a Google auth user, just update the info
+      if (googleAuth) {
+        return res.send({
+          success: true,
+          message: 'User already exists',
+          user: {
+            email: existingUser.email,
+            name: existingUser.name,
+            image: existingUser.photoURL || existingUser.image
+          }
+        });
+      }
+      return res.status(400).send({ 
+        success: false,
+        message: 'User already exists with this email' 
+      });
+    }
+
+    // Create new user
+    const newUser = {
+      name,
+      email,
+      photoURL: photoURL || '',
+      googleAuth: googleAuth || false,
+      uid: uid || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Only store password hash if not Google auth (in production, use bcrypt)
+    if (password && !googleAuth) {
+      newUser.password = password; // In production, hash this with bcrypt!
+    }
+
+    const result = await usersCollection.insertOne(newUser);
+
+    res.status(201).send({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        email: newUser.email,
+        name: newUser.name,
+        image: newUser.photoURL
+      },
+      token: 'user-token-' + result.insertedId
+    });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).send({ 
+      success: false,
+      message: 'Failed to register user' 
+    });
+  }
+});
+
+// Login user
+app.post('/login', checkMongoConnection, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await usersCollection.findOne({ email });
+
+    if (!user) {
+      return res.status(401).send({ 
+        success: false,
+        message: 'Invalid email or password' 
+      });
+    }
+
+    // Check password (in production, use bcrypt to compare hashed password)
+    if (user.password !== password) {
+      return res.status(401).send({ 
+        success: false,
+        message: 'Invalid email or password' 
+      });
+    }
+
+    res.send({
+      success: true,
+      message: 'Login successful',
+      user: {
+        email: user.email,
+        name: user.name,
+        image: user.photoURL || user.image
+      },
+      token: 'user-token-' + user._id
+    });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).send({ 
+      success: false,
+      message: 'Failed to login' 
+    });
+  }
+});
+
+// Get all users (for admin/debugging)
+app.get('/users', checkMongoConnection, async (req, res) => {
+  try {
+    const users = await usersCollection
+      .find({})
+      .project({ password: 0 }) // Don't send passwords
+      .toArray();
+
+    res.send({
+      success: true,
+      data: users,
+      count: users.length
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).send({ 
+      success: false,
+      error: 'Failed to fetch users' 
+    });
+  }
+});
+
+// Get user by email
+app.get('/users/:email', checkMongoConnection, async (req, res) => {
+  try {
+    const email = req.params.email;
+    const user = await usersCollection.findOne(
+      { email },
+      { projection: { password: 0 } } // Don't send password
+    );
+
+    if (!user) {
+      return res.status(404).send({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    res.send({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).send({ 
+      success: false,
+      error: 'Failed to fetch user' 
+    });
+  }
+});
+
+
+
+// Get latest 6 products (for Home page)
+app.get('/products/latest', checkMongoConnection, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 6;
+    
+    const products = await productsCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .toArray();
+
+    res.send(products);
+  } catch (error) {
+    console.error('Error fetching latest products:', error);
+    res.status(500).send({ 
+      success: false,
+      error: 'Failed to fetch latest products' 
+    });
+  }
+});
 
 // Get all products with pagination
 app.get('/products', checkMongoConnection, async (req, res) => {
@@ -555,16 +735,23 @@ app.listen(port, () => {
   console.log(` Local: http://localhost:${port}`);
   console.log(`\n Available Endpoints:`);
   console.log(`   GET    /                          - Server status`);
+  console.log(`\n   👤 Authentication:`);
+  console.log(`   POST   /users                     - Register user`);
+  console.log(`   POST   /login                     - Login user`);
+  console.log(`   GET    /users                     - All users`);
+  console.log(`   GET    /users/:email              - Get user by email`);
+  console.log(`\n   📦 Products:`);
+  console.log(`   GET    /products/latest           - Latest 6 products`);
   console.log(`   GET    /products                  - All products`);
   console.log(`   GET    /products/:id              - Single product`);
   console.log(`   POST   /products                  - Add new product`);
   console.log(`   PUT    /products/:id              - Update product`);
   console.log(`   DELETE /products/:id              - Delete product`);
+  console.log(`\n   📤 Exports & Imports:`);
   console.log(`   GET    /exports/:email            - My exports`);
   console.log(`   GET    /imports/:email            - My imports`);
   console.log(`   POST   /imports                   - Import product`);
   console.log(`   DELETE /imports/:id               - Remove import`);
-  console.log(`   GET    /products/featured/latest  - Featured products`);
   console.log(`   GET    /stats                     - Statistics\n`);
 });
 
