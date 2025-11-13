@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
 
 app.post('/users', checkMongoConnection, async (req, res) => {
   try {
-    const { name, email, password, photoURL, googleAuth, uid, role } = req.body;
+    const { name, email, password, photoURL, googleAuth, uid } = req.body;
 
     const existingUser = await usersCollection.findOne({ email });
     
@@ -75,8 +75,7 @@ app.post('/users', checkMongoConnection, async (req, res) => {
           user: {
             email: existingUser.email,
             name: existingUser.name,
-            image: existingUser.photoURL || existingUser.image,
-            role: existingUser.role || 'exporter'
+            image: existingUser.photoURL || existingUser.image
           }
         });
       }
@@ -274,8 +273,10 @@ app.get('/products', checkMongoConnection, async (req, res) => {
 app.get('/products/:id', checkMongoConnection, async (req, res) => {
   try {
     const id = req.params.id;
+    console.log('📦 Fetching product with ID:', id);
     
     if (!ObjectId.isValid(id)) {
+      console.log('❌ Invalid ObjectId format:', id);
       return res.status(400).send({ 
         success: false,
         error: 'Invalid product ID' 
@@ -285,12 +286,14 @@ app.get('/products/:id', checkMongoConnection, async (req, res) => {
     const product = await productsCollection.findOne({ _id: new ObjectId(id) });
 
     if (!product) {
+      console.log('❌ Product not found with ID:', id);
       return res.status(404).send({ 
         success: false,
         error: 'Product not found' 
       });
     }
 
+    console.log('✅ Product found:', product.productName);
     res.send({
       success: true,
       data: product
@@ -445,6 +448,18 @@ app.delete('/products/:id', checkMongoConnection, async (req, res) => {
       });
     }
 
+    const importCount = await importsCollection.countDocuments({ 
+      productId: id 
+    });
+
+    if (importCount > 0) {
+      console.log(`❌ Cannot delete product ${id}: ${importCount} user(s) have imported it`);
+      return res.status(400).send({ 
+        success: false,
+        error: `Cannot delete this product. ${importCount} user(s) have imported it. Products with active imports cannot be deleted.`
+      });
+    }
+
     const result = await productsCollection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
@@ -454,6 +469,7 @@ app.delete('/products/:id', checkMongoConnection, async (req, res) => {
       });
     }
 
+    console.log(`✅ Product ${id} deleted successfully`);
     res.send({
       success: true,
       message: 'Product deleted successfully'
@@ -559,11 +575,17 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
 app.get('/imports/:email', checkMongoConnection, async (req, res) => {
   try {
     const email = req.params.email;
+    console.log('📥 Fetching imports for email:', email);
     
     const imports = await importsCollection
       .find({ userEmail: email })
       .sort({ createdAt: -1 })
       .toArray();
+
+    console.log(`✅ Found ${imports.length} imports`);
+    imports.forEach((imp, index) => {
+      console.log(`Import ${index + 1}: productId = ${imp.productId}, productName = ${imp.productName}`);
+    });
 
     res.send({
       success: true,
@@ -572,9 +594,9 @@ app.get('/imports/:email', checkMongoConnection, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching imports:', error);
-    res.status(500).send({ 
+    res.status(500).send({
       success: false,
-      error: 'Failed to fetch imports' 
+      error: 'Failed to fetch imports'
     });
   }
 });
