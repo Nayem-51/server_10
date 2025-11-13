@@ -70,7 +70,7 @@ app.get('/', (req, res) => {
 // Register new user
 app.post('/users', checkMongoConnection, async (req, res) => {
   try {
-    const { name, email, password, photoURL, googleAuth, uid } = req.body;
+    const { name, email, password, photoURL, googleAuth, uid, role } = req.body;
 
     // Check if user already exists
     const existingUser = await usersCollection.findOne({ email });
@@ -84,7 +84,8 @@ app.post('/users', checkMongoConnection, async (req, res) => {
           user: {
             email: existingUser.email,
             name: existingUser.name,
-            image: existingUser.photoURL || existingUser.image
+            image: existingUser.photoURL || existingUser.image,
+            role: existingUser.role || 'exporter'
           }
         });
       }
