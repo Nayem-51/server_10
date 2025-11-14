@@ -363,22 +363,32 @@ app.get('/products', checkMongoConnection, async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
+    const category = req.query.category || ''; // Category filter
 
-    const searchQuery = search ? {
-      $or: [
+    // Build query
+    const query = {};
+    
+    // Add search filter
+    if (search) {
+      query.$or = [
         { productName: { $regex: search, $options: 'i' } },
         { originCountry: { $regex: search, $options: 'i' } }
-      ]
-    } : {};
+      ];
+    }
+    
+    // Add category filter
+    if (category) {
+      query.category = { $regex: category, $options: 'i' };
+    }
 
     const products = await productsCollection
-      .find(searchQuery)
+      .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .toArray();
 
-    const total = await productsCollection.countDocuments(searchQuery);
+    const total = await productsCollection.countDocuments(query);
 
     res.send({
       success: true,
@@ -388,6 +398,10 @@ app.get('/products', checkMongoConnection, async (req, res) => {
         page,
         limit,
         totalPages: Math.ceil(total / limit)
+      },
+      filters: {
+        search,
+        category
       }
     });
   } catch (error) {
@@ -395,6 +409,79 @@ app.get('/products', checkMongoConnection, async (req, res) => {
     res.status(500).send({ 
       success: false,
       error: 'Failed to fetch products' 
+    });
+  }
+});
+
+// Get all categories
+app.get('/categories', checkMongoConnection, async (req, res) => {
+  try {
+    const categories = await productsCollection.distinct("category");
+    
+    // Get count for each category
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category) => {
+        const count = await productsCollection.countDocuments({ category });
+        return {
+          name: category,
+          count: count
+        };
+      })
+    );
+
+    res.send({
+      success: true,
+      data: categoriesWithCount.filter(cat => cat.name), // Remove null/undefined
+      total: categoriesWithCount.length
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).send({ 
+      success: false,
+      error: 'Failed to fetch categories' 
+    });
+  }
+});
+
+// Get products by category
+app.get('/products/category/:categoryName', checkMongoConnection, async (req, res) => {
+  try {
+    const categoryName = req.params.categoryName;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    console.log('📂 Fetching products for category:', categoryName);
+
+    const products = await productsCollection
+      .find({ category: { $regex: categoryName, $options: 'i' } })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    const total = await productsCollection.countDocuments({ 
+      category: { $regex: categoryName, $options: 'i' } 
+    });
+
+    console.log(`✅ Found ${products.length} products in category: ${categoryName}`);
+
+    res.send({
+      success: true,
+      category: categoryName,
+      data: products,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching products by category:', error);
+    res.status(500).send({ 
+      success: false,
+      error: 'Failed to fetch products by category' 
     });
   }
 });
