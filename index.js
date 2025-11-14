@@ -9,6 +9,28 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Firebase Admin SDK setup for Vercel deployment (Optional - if using Firebase Auth)
+let admin;
+try {
+  if (process.env.FIREBASE_SERVICE_KEY) {
+    const firebaseAdmin = require('firebase-admin');
+    
+    // Decode the base64 encoded service account key
+    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
+    const serviceAccount = JSON.parse(decoded);
+    
+    // Initialize Firebase Admin
+    admin = firebaseAdmin.initializeApp({
+      credential: firebaseAdmin.credential.cert(serviceAccount)
+    });
+    
+    console.log("✓ Firebase Admin SDK initialized successfully");
+  }
+} catch (error) {
+  console.log("ℹ Firebase Admin SDK not configured (optional)");
+}
+
+// MongoDB connection
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const client = new MongoClient(uri);
 
@@ -700,14 +722,14 @@ app.listen(port, () => {
   console.log(`   POST   /login                     - Login user`);
   console.log(`   GET    /users                     - All users`);
   console.log(`   GET    /users/:email              - Get user by email`);
-  console.log(`\n   📦 Products:`);
+  console.log(`\n    Products:`);
   console.log(`   GET    /products/latest           - Latest 6 products`);
   console.log(`   GET    /products                  - All products`);
   console.log(`   GET    /products/:id              - Single product`);
   console.log(`   POST   /products                  - Add new product`);
   console.log(`   PUT    /products/:id              - Update product`);
   console.log(`   DELETE /products/:id              - Delete product`);
-  console.log(`\n   📤 Exports & Imports:`);
+  console.log(`\n    Exports & Imports:`);
   console.log(`   GET    /exports/:email            - My exports`);
   console.log(`   GET    /imports/:email            - My imports`);
   console.log(`   POST   /imports                   - Import product`);
