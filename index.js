@@ -40,6 +40,11 @@ let isMongoConnected = false;
 
 async function connectToMongoDB() {
   try {
+    console.log("🔄 Attempting MongoDB connection...");
+    console.log("📍 MongoDB URI exists:", !!uri);
+    console.log("📍 MongoDB URI length:", uri ? uri.length : 0);
+    console.log("📍 URI type:", typeof uri);
+    
     await client.connect();
     console.log("✓ Successfully connected to MongoDB!");
     isMongoConnected = true;
@@ -48,9 +53,13 @@ async function connectToMongoDB() {
     productsCollection = database.collection("products");
     importsCollection = database.collection("imports");
     usersCollection = database.collection("users");
+    
+    console.log("✓ Database and collections initialized");
   } catch (error) {
     console.error("✗ MongoDB connection error:", error.message);
-    console.log("\n  MongoDB is not running. Please:");
+    console.error("✗ Full error:", JSON.stringify(error, null, 2));
+    console.error("✗ Error name:", error.name);
+    console.log("\n⚠️  MongoDB is not running. Please:");
     console.log("   1. Update MONGODB_URI in .env file with MongoDB Atlas connection string");
     console.log("   2. Or start local MongoDB with 'mongod' command\n");
   }
