@@ -112,6 +112,41 @@ app.get('/debug', (req, res) => {
   });
 });
 
+// Test MongoDB connection manually
+app.get('/test-connection', async (req, res) => {
+  try {
+    const testUri = process.env.MONGODB_URI;
+    const testClient = new MongoClient(testUri);
+    
+    console.log('🔄 Testing MongoDB connection...');
+    await testClient.connect();
+    console.log('✅ Test connection successful!');
+    
+    await testClient.db("admin").command({ ping: 1 });
+    console.log('✅ Ping successful!');
+    
+    await testClient.close();
+    
+    res.send({
+      success: true,
+      message: 'MongoDB connection test successful!',
+      details: {
+        connected: true,
+        pingSuccessful: true
+      }
+    });
+  } catch (error) {
+    console.error('❌ Test connection failed:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message,
+      errorName: error.name,
+      errorCode: error.code,
+      errorStack: error.stack
+    });
+  }
+});
+
 app.post('/users', checkMongoConnection, async (req, res) => {
   try {
     const { name, email, password, photoURL, googleAuth, uid } = req.body;
