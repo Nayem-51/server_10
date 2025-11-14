@@ -710,36 +710,44 @@ app.get('/products/featured/latest', checkMongoConnection, async (req, res) => {
   }
 });
 
+// Connect to MongoDB
 connectToMongoDB();
 
-app.listen(port, () => {
-  console.log(`\n Server is running on port: ${port}`);
-  console.log(` Local: http://localhost:${port}`);
-  console.log(`\n Available Endpoints:`);
-  console.log(`   GET    /                          - Server status`);
-  console.log(`\n   👤 Authentication:`);
-  console.log(`   POST   /users                     - Register user`);
-  console.log(`   POST   /login                     - Login user`);
-  console.log(`   GET    /users                     - All users`);
-  console.log(`   GET    /users/:email              - Get user by email`);
-  console.log(`\n    Products:`);
-  console.log(`   GET    /products/latest           - Latest 6 products`);
-  console.log(`   GET    /products                  - All products`);
-  console.log(`   GET    /products/:id              - Single product`);
-  console.log(`   POST   /products                  - Add new product`);
-  console.log(`   PUT    /products/:id              - Update product`);
-  console.log(`   DELETE /products/:id              - Delete product`);
-  console.log(`\n    Exports & Imports:`);
-  console.log(`   GET    /exports/:email            - My exports`);
-  console.log(`   GET    /imports/:email            - My imports`);
-  console.log(`   POST   /imports                   - Import product`);
-  console.log(`   DELETE /imports/:id               - Remove import`);
-  console.log(`   GET    /stats                     - Statistics\n`);
-});
+// Start server only if not in Vercel serverless environment
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`\n🚀 Server is running on port: ${port}`);
+    console.log(`📍 Local: http://localhost:${port}`);
+    console.log(`\n📋 Available Endpoints:`);
+    console.log(`   GET    /                          - Server status`);
+    console.log(`\n   👤 Authentication:`);
+    console.log(`   POST   /users                     - Register user`);
+    console.log(`   POST   /login                     - Login user`);
+    console.log(`   GET    /users                     - All users`);
+    console.log(`   GET    /users/:email              - Get user by email`);
+    console.log(`\n   📦 Products:`);
+    console.log(`   GET    /products/latest           - Latest 6 products`);
+    console.log(`   GET    /products                  - All products`);
+    console.log(`   GET    /products/:id              - Single product`);
+    console.log(`   POST   /products                  - Add new product`);
+    console.log(`   PUT    /products/:id              - Update product`);
+    console.log(`   DELETE /products/:id              - Delete product`);
+    console.log(`\n   🔄 Exports & Imports:`);
+    console.log(`   GET    /exports/:email            - My exports`);
+    console.log(`   GET    /imports/:email            - My imports`);
+    console.log(`   POST   /imports                   - Import product`);
+    console.log(`   DELETE /imports/:id               - Remove import`);
+    console.log(`   GET    /stats                     - Statistics\n`);
+  });
+}
 
+// Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\n\n Shutting down gracefully...');
+  console.log('\n\n🛑 Shutting down gracefully...');
   await client.close();
   console.log('✓ MongoDB connection closed');
   process.exit(0);
 });
+
+// Export for Vercel
+module.exports = app;

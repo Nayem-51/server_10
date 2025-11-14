@@ -1,90 +1,99 @@
 # 🌐 Export Hub API Server
 
-Backend REST API for Export Hub - Product Import/Export Management System
+A complete backend API server for an Import/Export Product Management System built with Node.js, Express, and MongoDB.
 
-**Live API:** [URL will be added after Vercel deployment]
+## 🚀 Features
 
----
+- ✅ Product Management (CRUD operations)
+- ✅ Import/Export Tracking
+- ✅ User Authentication
+- ✅ Automatic Quantity Management
+- ✅ Pagination & Search
+- ✅ RESTful API Design
+- ✅ Ready for Vercel Deployment
 
-## 📋 Features
+## 🛠️ Tech Stack
 
-1. **User Management**
-   - User registration with password hashing
-   - User login with authentication
-   - Get all users or specific user by email
-   - Support for Google authentication
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB (MongoDB Atlas)
+- **Deployment**: Vercel
+- **Environment**: dotenv
 
-2. **Product Management**
-   - Create, read, update, and delete products
-   - Get latest 6 products (sorted by creation date)
-   - Search products by name with pagination
-   - Automatic quantity tracking
+## 📦 Installation
 
-3. **Import/Export Operations**
-   - Import products with quantity validation
-   - Track user imports and exports
-   - Update existing imports automatically
-   - Prevent deletion of products with active imports
+```bash
+# Install dependencies
+npm install
 
-4. **Database Operations**
-   - MongoDB integration with proper indexing
-   - Atomic operations using $inc operator
-   - Aggregation for statistics
-   - Real-time data synchronization
+# Create .env file and add your MongoDB URI
+MONGODB_URI=your_mongodb_connection_string
+PORT=3000
 
-5. **API Features**
-   - CORS enabled for cross-origin requests
-   - Environment variable configuration
-   - Comprehensive error handling
-   - Request logging and monitoring
+# Run development server
+npm run dev
 
----
-
-## 🚀 Technologies
-
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - NoSQL database
-- **dotenv** - Environment variables
-- **CORS** - Cross-origin resource sharing
-
----
-
-## 📡 API Endpoints
-
-### Authentication
+# Run production server
+npm start
 ```
-POST   /users          - Register new user
-POST   /login          - Login user
-GET    /users          - Get all users
-GET    /users/:email   - Get user by email
-```
+
+## 🌐 Deployment
+
+This server is configured for **Vercel deployment**.
+
+👉 **See [DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment instructions.
+
+## 📋 API Endpoints
 
 ### Products
-```
-GET    /products/latest      - Get latest 6 products
-GET    /products            - Get all products (with pagination & search)
-GET    /products/:id        - Get single product
-POST   /products            - Add new product
-PUT    /products/:id        - Update product
-DELETE /products/:id        - Delete product
-```
+- `GET /products` - Get all products
+- `GET /products/:id` - Get single product
+- `POST /products` - Add new product
+- `PUT /products/:id` - Update product
+- `DELETE /products/:id` - Delete product
 
 ### Imports & Exports
-```
-GET    /exports/:email      - Get user's exports
-GET    /imports/:email      - Get user's imports
-POST   /imports             - Import a product
-DELETE /imports/:id         - Remove an import
+- `GET /exports/:email` - Get user's exports
+- `GET /imports/:email` - Get user's imports
+- `POST /imports` - Import a product
+- `DELETE /imports/:id` - Remove import
+
+### Users
+- `GET /users` - Get all users
+- `POST /users` - Register user
+- `POST /login` - Login user
+
+### Stats
+- `GET /stats` - Get statistics
+
+## 🔧 Environment Variables
+
+Create a `.env` file:
+
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/exportHub
+PORT=3000
+NODE_ENV=development
 ```
 
----
+## 📁 Project Structure
 
-## 🛠️ Installation
+```
+server_10/
+├── index.js              # Main server file
+├── package.json          # Dependencies
+├── vercel.json          # Vercel configuration
+├── .env                 # Environment variables (don't commit!)
+├── .gitignore           # Git ignore rules
+├── .vercelignore        # Vercel ignore rules
+├── DEPLOYMENT.md        # Deployment guide
+└── README.md            # This file
+```
+
+## 🚀 Quick Start
 
 1. **Clone the repository**
    ```bash
-   git clone [your-repo-url]
+   git clone <your-repo-url>
    cd server_10
    ```
 
@@ -93,240 +102,122 @@ DELETE /imports/:id         - Remove an import
    npm install
    ```
 
-3. **Setup environment variables**
-   
-   Create a `.env` file:
-   ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/exportHub?retryWrites=true&w=majority
-   PORT=3000
+3. **Setup MongoDB Atlas**
+   - Create account at https://mongodb.com/cloud/atlas
+   - Create free cluster
+   - Get connection string
+
+4. **Configure environment**
+   ```bash
+   # Create .env file
+   echo "MONGODB_URI=your_connection_string" > .env
+   echo "PORT=3000" >> .env
    ```
 
-4. **Start development server**
+5. **Run the server**
    ```bash
    npm run dev
    ```
 
-5. **Start production server**
-   ```bash
-   npm start
+6. **Test the API**
+   ```
+   Open browser: http://localhost:3000
    ```
 
----
+## 🌐 Deploy to Vercel
 
-## 📦 Dependencies
+**Option 1: Via GitHub**
+1. Push code to GitHub
+2. Import project in Vercel
+3. Add environment variables
+4. Deploy!
 
-```json
-{
-  "cors": "^2.8.5",
-  "dotenv": "^17.2.3",
-  "express": "^5.1.0",
-  "mongodb": "^7.0.0",
-  "mongoose": "^8.19.3"
-}
-```
-
----
-
-## 🗄️ Database Collections
-
-### users
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  email: String,
-  image: String,
-  createdAt: Date
-}
-```
-
-### products
-```javascript
-{
-  _id: ObjectId,
-  productName: String,
-  productImage: String,
-  price: Number,
-  originCountry: String,
-  rating: Number,
-  availableQuantity: Number,
-  userEmail: String,
-  userName: String,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-### imports
-```javascript
-{
-  _id: ObjectId,
-  productId: String,
-  productName: String,
-  productImage: String,
-  price: Number,
-  rating: Number,
-  originCountry: String,
-  importedQuantity: Number,
-  userEmail: String,
-  userName: String,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
----
-
-## 🔒 Security Features
-
-- Environment variables for sensitive data
-- CORS configuration
-- Input validation
-- Error handling middleware
-- MongoDB injection prevention
-- Atomic operations for data consistency
-
----
-
-## 📊 Special Features
-
-### Delete Protection
-Products with active imports cannot be deleted:
-```javascript
-const importCount = await importsCollection.countDocuments({ productId: id });
-if (importCount > 0) {
-  return res.status(400).send({
-    error: `Cannot delete this product. ${importCount} user(s) have imported it.`
-  });
-}
-```
-
-### Atomic Quantity Updates
-Using MongoDB $inc operator for thread-safe updates:
-```javascript
-await productsCollection.updateOne(
-  { _id: new ObjectId(productId) },
-  { $inc: { availableQuantity: -parseInt(importedQuantity) } }
-);
-```
-
-### Smart Import Handling
-Automatically updates existing imports:
-```javascript
-const existingImport = await importsCollection.findOne({
-  productId: productId,
-  userEmail: userEmail
-});
-
-if (existingImport) {
-  await importsCollection.updateOne(
-    { _id: existingImport._id },
-    { $inc: { importedQuantity: parseInt(importedQuantity) } }
-  );
-}
-```
-
----
-
-## 🚀 Deployment to Vercel
-
-1. **Install Vercel CLI**
-   ```bash
-   npm install -g vercel
-   ```
-
-2. **Login to Vercel**
-   ```bash
-   vercel login
-   ```
-
-3. **Deploy**
-   ```bash
-   vercel
-   ```
-
-4. **Add environment variable**
-   ```bash
-   vercel env add MONGODB_URI
-   ```
-
-5. **Deploy to production**
-   ```bash
-   vercel --prod
-   ```
-
----
-
-## 🧪 Testing
-
-Test the API endpoints using:
-- **Postman** - API testing tool
-- **Thunder Client** - VS Code extension
-- **curl** - Command line tool
-
-Example:
+**Option 2: Via CLI**
 ```bash
-# Get all products
-curl http://localhost:3000/products
-
-# Get latest 6 products
-curl http://localhost:3000/products/latest
-
-# Search products
-curl http://localhost:3000/products?search=phone&page=1&limit=10
+npm i -g vercel
+vercel login
+vercel
 ```
 
----
+📖 **Full deployment guide**: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-## 📝 Response Format
+## 📝 Sample Request
 
-### Success Response
-```json
-{
-  "success": true,
-  "data": [...],
-  "pagination": {
-    "total": 100,
-    "page": 1,
-    "limit": 12,
-    "totalPages": 9
-  }
-}
+### Get All Products
+```javascript
+fetch('http://localhost:3000/products')
+  .then(res => res.json())
+  .then(data => console.log(data));
 ```
 
-### Error Response
-```json
-{
-  "success": false,
-  "error": "Error message here"
-}
+### Add Product
+```javascript
+fetch('http://localhost:3000/products', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    productName: "Jute Bags",
+    productImage: "https://example.com/image.jpg",
+    price: 150,
+    originCountry: "Bangladesh",
+    rating: 4.5,
+    availableQuantity: 100,
+    userEmail: "seller@example.com",
+    userName: "Seller Name"
+  })
+});
 ```
 
+## 🔐 Security
+
+- CORS enabled for all origins
+- MongoDB connection secured with credentials
+- Environment variables for sensitive data
+- Input validation on all endpoints
+
+## 🐛 Troubleshooting
+
+### MongoDB Connection Error
+- Check MongoDB Atlas network access (allow 0.0.0.0/0)
+- Verify connection string in `.env`
+- Ensure database user is created
+
+### Server Not Starting
+- Check if port 3000 is available
+- Verify all dependencies are installed
+- Check `.env` file exists
+
+## 📚 Documentation
+
+- [Deployment Guide](./DEPLOYMENT.md) - Complete Vercel deployment instructions
+- [MongoDB Atlas Setup](https://www.mongodb.com/docs/atlas/)
+- [Express.js Docs](https://expressjs.com/)
+- [Vercel Docs](https://vercel.com/docs)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+ISC License
+
+## 👤 Author
+
+Created for Export Hub - Import/Export Management System
+
+## 🎯 Use Cases
+
+- E-commerce platforms
+- Import/Export businesses
+- Product marketplace
+- Inventory management
+- Trade management systems
+
 ---
 
-## 🔧 MongoDB Setup
-
-1. Create account at [MongoDB Atlas](https://cloud.mongodb.com)
-2. Create a cluster
-3. Get connection string
-4. Add to `.env` file
-5. Set Network Access to `0.0.0.0/0` for Vercel deployment
-
----
-
-## 📞 Support
-
-For issues or questions:
-- Create an issue on GitHub
-- Email: info@exporthub.com
-
----
-
-## 👤 Developer
-
-**Export Hub Backend Team**  
-© 2025 Export Hub - All rights reserved
-
----
-
-**Built with Node.js, Express, and MongoDB** ⚡
+**Ready to deploy? Check [DEPLOYMENT.md](./DEPLOYMENT.md)** 🚀
