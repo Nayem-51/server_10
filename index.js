@@ -30,38 +30,59 @@ try {
   console.log("ℹ Firebase Admin SDK not configured (optional)");
 }
 
-// MongoDB connection
+// MongoDB connection with Vercel-friendly options
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
-const client = new MongoClient(uri);
+const client = new MongoClient(uri, {
+  serverSelectionTimeoutMS: 30000, // 30 seconds
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 30000,
+});
 
 let database, productsCollection, importsCollection, usersCollection;
 let isMongoConnected = false;
 
 
 async function connectToMongoDB() {
-  try {
-    console.log("🔄 Attempting MongoDB connection...");
-    console.log("📍 MongoDB URI exists:", !!uri);
-    console.log("📍 MongoDB URI length:", uri ? uri.length : 0);
-    console.log("📍 URI type:", typeof uri);
-    
-    await client.connect();
-    console.log("✓ Successfully connected to MongoDB!");
-    isMongoConnected = true;
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      console.log(`🔄 Attempting MongoDB connection... (Attempt ${retryCount + 1}/${maxRetries})`);
+      console.log("📍 MongoDB URI exists:", !!uri);
+      console.log("📍 MongoDB URI length:", uri ? uri.length : 0);
+      console.log("📍 URI type:", typeof uri);
+      
+      await client.connect();
+      
+      // Test the connection
+      await client.db("admin").command({ ping: 1 });
+      
+      console.log("✅ Successfully connected to MongoDB!");
+      isMongoConnected = true;
 
-    database = client.db("exportHub");
-    productsCollection = database.collection("products");
-    importsCollection = database.collection("imports");
-    usersCollection = database.collection("users");
-    
-    console.log("✓ Database and collections initialized");
-  } catch (error) {
-    console.error("✗ MongoDB connection error:", error.message);
-    console.error("✗ Full error:", JSON.stringify(error, null, 2));
-    console.error("✗ Error name:", error.name);
-    console.log("\n⚠️  MongoDB is not running. Please:");
-    console.log("   1. Update MONGODB_URI in .env file with MongoDB Atlas connection string");
-    console.log("   2. Or start local MongoDB with 'mongod' command\n");
+      database = client.db("exportHub");
+      productsCollection = database.collection("products");
+      importsCollection = database.collection("imports");
+      usersCollection = database.collection("users");
+      
+      console.log("✅ Database and collections initialized");
+      return; // Success, exit the function
+      
+    } catch (error) {
+      retryCount++;
+      console.error(`❌ MongoDB connection error (Attempt ${retryCount}/${maxRetries}):`, error.message);
+      
+      if (retryCount >= maxRetries) {
+        console.error("❌ All connection attempts failed");
+        console.error("✗ Full error:", JSON.stringify(error, null, 2));
+        console.error("✗ Error name:", error.name);
+        console.log("\n⚠️  MongoDB connection failed after all retries");
+      } else {
+        console.log(`⏳ Retrying in 2 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+      }
+    }
   }
 }
 
