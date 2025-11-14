@@ -87,18 +87,40 @@ async function connectToMongoDB() {
 }
 
 
-const checkMongoConnection = (req, res, next) => {
+// Lazy connection - connect on first request if not connected
+const ensureMongoConnection = async () => {
   if (!isMongoConnected) {
-    return res.status(503).send({ 
-      success: false,
-      error: 'Database not connected',
-      message: 'Please configure MongoDB connection in .env file'
-    });
+    console.log('🔄 MongoDB not connected, connecting now...');
+    await connectToMongoDB();
   }
-  next();
 };
 
-app.get('/', (req, res) => {
+const checkMongoConnection = async (req, res, next) => {
+  try {
+    await ensureMongoConnection();
+    
+    if (!isMongoConnected) {
+      return res.status(503).send({ 
+        success: false,
+        error: 'Database not connected',
+        message: 'Failed to connect to MongoDB. Please check configuration.'
+      });
+    }
+    next();
+  } catch (error) {
+    console.error('❌ Error in checkMongoConnection:', error);
+    return res.status(503).send({ 
+      success: false,
+      error: 'Database connection error',
+      message: error.message
+    });
+  }
+};
+
+app.get('/', async (req, res) => {
+  // Try to connect if not connected yet (lazy connection)
+  await ensureMongoConnection();
+  
   res.send({ 
     success: true,
     message: 'Export Hub Server is running',
@@ -795,8 +817,9 @@ app.get('/products/featured/latest', checkMongoConnection, async (req, res) => {
   }
 });
 
-// Connect to MongoDB
-connectToMongoDB();
+// Connect to MongoDB on-demand (lazy connection for Vercel serverless)
+// MongoDB will connect automatically when first request comes
+// connectToMongoDB(); // Disabled - using lazy connection
 
 // Start server only if not in Vercel serverless environment
 if (process.env.NODE_ENV !== 'production') {
