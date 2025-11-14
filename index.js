@@ -92,6 +92,26 @@ app.get('/', (req, res) => {
   });
 });
 
+// Debug endpoint to check environment variables
+app.get('/debug', (req, res) => {
+  const mongoUri = process.env.MONGODB_URI;
+  res.send({
+    success: true,
+    debug: {
+      mongoUriExists: !!mongoUri,
+      mongoUriLength: mongoUri ? mongoUri.length : 0,
+      mongoUriPrefix: mongoUri ? mongoUri.substring(0, 25) + '...' : 'N/A',
+      mongoUriHasDatabase: mongoUri ? mongoUri.includes('/exportHub') : false,
+      mongoUriHasCluster: mongoUri ? mongoUri.includes('cluster0.mbp6mif') : false,
+      nodeEnv: process.env.NODE_ENV,
+      port: process.env.PORT,
+      isMongoConnected: isMongoConnected,
+      platform: process.platform,
+      nodeVersion: process.version
+    }
+  });
+});
+
 app.post('/users', checkMongoConnection, async (req, res) => {
   try {
     const { name, email, password, photoURL, googleAuth, uid } = req.body;
