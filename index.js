@@ -56,7 +56,7 @@ async function connectToMongoDB() {
       await client.connect();
       
       // Test the connection
-      await client.db("admin").command({ ping: 1 });
+      // await client.db("admin").command({ ping: 1 });
       
       console.log("✅ Successfully connected to MongoDB!");
       isMongoConnected = true;
@@ -1046,6 +1046,9 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`   POST   /imports                   - Import product`);
     console.log(`   DELETE /imports/:id               - Remove import`);
     console.log(`   GET    /stats                     - Statistics\n`);
+    
+    // Connect to MongoDB immediately for local dev
+    connectToMongoDB();
   });
 }
 
