@@ -288,6 +288,40 @@ app.post('/login', checkMongoConnection, async (req, res) => {
   }
 });
 
+
+
+app.put('/users/:email', checkMongoConnection, async (req, res) => {
+  try {
+    const email = req.params.email;
+    const { name, photoURL } = req.body;
+    
+    const updateDoc = {
+      $set: {
+        ...(name && { name }),
+        ...(photoURL && { photoURL, image: photoURL }),
+        updatedAt: new Date()
+      }
+    };
+
+    const result = await usersCollection.updateOne(
+      { email },
+      updateDoc
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).send({ success: false, message: 'User not found' });
+    }
+
+    res.send({
+      success: true,
+      message: 'Profile updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).send({ success: false, error: 'Failed to update profile' });
+  }
+});
+
 app.get('/users', checkMongoConnection, async (req, res) => {
   try {
     const users = await usersCollection
@@ -364,6 +398,11 @@ app.get('/products', checkMongoConnection, async (req, res) => {
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
     const category = req.query.category || ''; // Category filter
+    const sort = req.query.sort || 'newest';
+    const minPrice = parseFloat(req.query.minPrice);
+    const maxPrice = parseFloat(req.query.maxPrice);
+
+    console.log('🔍 GET /products query:', { page, limit, search, category, sort, minPrice, maxPrice });
 
     // Build query
     const query = {};
@@ -381,9 +420,22 @@ app.get('/products', checkMongoConnection, async (req, res) => {
       query.category = { $regex: category, $options: 'i' };
     }
 
+    // Add price filter
+    if (!isNaN(minPrice) || !isNaN(maxPrice)) {
+      query.price = {};
+      if (!isNaN(minPrice)) query.price.$gte = minPrice;
+      if (!isNaN(maxPrice)) query.price.$lte = maxPrice;
+    }
+
+    // Determine sort option
+    let sortOptions = { createdAt: -1 }; // Default: Newest
+    if (sort === 'price_asc') sortOptions = { price: 1 };
+    else if (sort === 'price_desc') sortOptions = { price: -1 };
+    else if (sort === 'oldest') sortOptions = { createdAt: 1 };
+
     const products = await productsCollection
       .find(query)
-      .sort({ createdAt: -1 })
+      .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .toArray();
@@ -401,7 +453,10 @@ app.get('/products', checkMongoConnection, async (req, res) => {
       },
       filters: {
         search,
-        category
+        category,
+        minPrice,
+        maxPrice,
+        sort
       }
     });
   } catch (error) {
@@ -777,6 +832,7 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
 
     res.status(201).send({
       success: true,
+      importId: importId,
       message: 'Product imported successfully'
     });
   } catch (error) {
@@ -784,6 +840,63 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
     res.status(500).send({ 
       success: false,
       error: 'Failed to import product' 
+    });
+  }
+});
+
+app.get('/dashboard/stats/:email', checkMongoConnection, async (req, res) => {
+  try {
+    const email = req.params.email;
+    
+    // 1. Total Exports (Products added by user)
+    const totalExports = await productsCollection.countDocuments({ userEmail: email });
+    
+    // 2. Total Imports (Items bought by user)
+    const imports = await importsCollection.find({ userEmail: email }).toArray();
+    const totalImports = imports.reduce((sum, item) => sum + (item.importedQuantity || 0), 0);
+    const totalSpent = imports.reduce((sum, item) => sum + ((item.price || 0) * (item.importedQuantity || 0)), 0);
+
+    // 3. Category Distribution (for Pie Chart) - based on their exports
+    const userProducts = await productsCollection.find({ userEmail: email }).toArray();
+    const categoryMap = {};
+    
+    userProducts.forEach(p => {
+      const cat = p.category || 'Uncategorized';
+      categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+    });
+
+    const categoryData = Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
+
+    // 4. Activity Data (Mocked for now since we don't track daily history well)
+    const activityData = [
+      { name: 'Mon', exports: Math.floor(totalExports * 0.1), imports: Math.floor(totalImports * 0.1) },
+      { name: 'Tue', exports: Math.floor(totalExports * 0.2), imports: Math.floor(totalImports * 0.2) },
+      { name: 'Wed', exports: Math.floor(totalExports * 0.15), imports: Math.floor(totalImports * 0.3) },
+      { name: 'Thu', exports: Math.floor(totalExports * 0.25), imports: Math.floor(totalImports * 0.1) },
+      { name: 'Fri', exports: Math.floor(totalExports * 0.2), imports: Math.floor(totalImports * 0.2) },
+      { name: 'Sat', exports: Math.floor(totalExports * 0.05), imports: Math.floor(totalImports * 0.05) },
+      { name: 'Sun', exports: Math.floor(totalExports * 0.05), imports: Math.floor(totalImports * 0.05) },
+    ];
+
+    res.send({
+      success: true,
+      stats: {
+        totalExports,
+        totalImports,
+        totalSpent,
+        totalEarned: 0 // Placeholder
+      },
+      charts: {
+        categoryData,
+        activityData
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).send({ 
+      success: false,
+      error: 'Failed to fetch dashboard stats' 
     });
   }
 });
