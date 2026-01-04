@@ -796,6 +796,7 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
       userEmail: userEmail
     });
 
+    let finalImportId;
     if (existingImport) {
       await importsCollection.updateOne(
         { _id: existingImport._id },
@@ -804,6 +805,7 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
           $set: { updatedAt: new Date() }
         }
       );
+      finalImportId = existingImport._id;
     } else {
       const importData = {
         productId,
@@ -819,7 +821,8 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
         updatedAt: new Date()
       };
 
-      await importsCollection.insertOne(importData);
+      const result = await importsCollection.insertOne(importData);
+      finalImportId = result.insertedId;
     }
 
     await productsCollection.updateOne(
@@ -832,7 +835,7 @@ app.post('/imports', checkMongoConnection, async (req, res) => {
 
     res.status(201).send({
       success: true,
-      importId: importId,
+      importId: finalImportId,
       message: 'Product imported successfully'
     });
   } catch (error) {
